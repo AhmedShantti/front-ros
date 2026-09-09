@@ -38,6 +38,7 @@ import {
   type PosEmployee,
 } from "@/lib/api/session";
 import { signOffTerminal } from "@/lib/api/auth";
+import { getTerminalName } from "@/lib/api/session";
 import { formatMoney, formatNumber, formatTime, tx as pick } from "@/lib/console/format";
 import { useLive } from "@/lib/console/live/store";
 import {

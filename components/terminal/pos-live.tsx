@@ -74,11 +74,11 @@ import {
   setPendingCashOpen,
   getPosEmployee,
   getDeviceTenantId,
-  type OpenCashSession,
+  isSignedIn,
+  onSessionChange,
   type PosEmployee,
 } from "@/lib/api/session";
-import { api } from "@/lib/api/endpoints";
-import { signInWithPin, signOffTerminal } from "@/lib/api/auth";
+import { signInWithPin } from "@/lib/api/auth";
 import { deviceId } from "@/lib/api/ids";
 import { AsyncPanel, ErrorPanel } from "@/components/console/states";
 import { DrawerSheet } from "@/components/terminal/pos-drawer";
@@ -171,6 +171,7 @@ export function LivePos() {
     return onSessionChange(sync);
   }, []);
 
+<<<<<<< HEAD
   const terminalId = mounted ? getTerminalId() : null;
 
   /**
@@ -193,6 +194,28 @@ export function LivePos() {
     (held.terminalId === "" || held.terminalId === terminalId);
 
   const cashSessionId = mine && held ? held.cashSessionId : null;
+=======
+  /**
+   * PROD-POS-SESSION-RECOVERY-P0 — `cashier`/`cashSessionId` were only ever
+   * read from storage once, above, on mount. A dead refresh token (an
+   * expired PIN session nobody renewed) makes `client.ts`'s
+   * `refreshSession()` call `clearSession()`, which correctly wipes the
+   * terminal token AND `posEmployee`/`cashSessionId` from storage together
+   * — but this already-mounted tree never re-read that, so it kept
+   * rendering the stale cashier name and the Open Drawer screen, both now
+   * backed by nothing, while every request 401'd underneath them. Mirrors
+   * `lib/console/providers.tsx`'s own `onSessionChange` listener for the
+   * console surface: react to storage disappearing, not just read it once.
+   */
+  useEffect(() => {
+    return onSessionChange(() => {
+      if (!isSignedIn()) {
+        setCashier(null);
+        setSessionId(null);
+      }
+    });
+  }, []);
+>>>>>>> wip/console-feature-work
 
   /** Write through, so the drawer survives the next reload too. */
   const takeCashSession = (next: string | null) => {
@@ -210,6 +233,7 @@ export function LivePos() {
     setHeld(record);
   };
 
+<<<<<<< HEAD
   /*
    * The terminal this device is bound to, as the server describes it.
    *
@@ -235,6 +259,10 @@ export function LivePos() {
 
   const terminalId = mounted ? getTerminalId() : null;
 
+=======
+  const terminalId = mounted ? getTerminalId() : null;
+
+>>>>>>> wip/console-feature-work
   if (!mounted) {
     return (
       <div className="text-fg-muted flex flex-1 items-center justify-center gap-2 p-8 text-sm">
