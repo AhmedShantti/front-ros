@@ -48,7 +48,7 @@ import {
   Undo2,
 } from "lucide-react";
 
-import type { Order } from "@/lib/console/types";
+import type { MenuItem, Order } from "@/lib/console/types";
 import { services, ServiceError, type Scope } from "@/lib/console/services";
 import { api } from "@/lib/api/endpoints";
 import {
