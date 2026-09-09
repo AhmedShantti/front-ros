@@ -2144,6 +2144,19 @@ export const consoleEn = {
   "orders.card": "Card (external terminal)",
   "orders.net": "Subtotal",
   "orders.grandTotal": "Total",
+  "nav.openCashSessions": "Open cash sessions",
+  "cashSessions.title": "Open Cash Sessions",
+  "cashSessions.subtitle": "Drawers left open under another employee's name, for a manager to discover and close.",
+  "cashSessions.empty": "No open cash sessions",
+  "cashSessions.employee": "Employee",
+  "cashSessions.closeAtTerminal": "Close at terminal",
+  "cashSessions.selectBranch": "Pick a branch to see its open sessions.",
+  "cashSessions.handoffNote": "Only the session id and this display context are handed off. The terminal decides authority for itself, from a fresh manager PIN.",
+  "shift.closeOtherTitle": "Close another employee's session",
+  "shift.closeOtherNote": "Sign on with a manager's own employee code and PIN — never the cashier's — to close this drawer. The server checks the permission for this branch when the count is read.",
+  "shift.switchEmployee": "Sign in as someone else",
+  "shift.targetSession": "Target session",
+  "shift.targetSessionNote": "Handed off from the console. The server re-checks who may close it — this is a starting point, not a grant.",
 } as const;
 
 export type ConsoleCopy = Record<keyof typeof consoleEn, string>;
