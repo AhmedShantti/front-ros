@@ -586,7 +586,7 @@ export const ROLE_DEFINITIONS: Record<RoleKey, RoleDefinition> = {
       "pos.order.view", "pos.order.create", "pos.order.void_line_prefire",
       "pos.order.transfer",
       "ops.live.view", "kds.operate",
-      "menu.item.read",
+      "menu.view",
     ],
   },
 
@@ -600,7 +600,11 @@ export const ROLE_DEFINITIONS: Record<RoleKey, RoleDefinition> = {
     defaultScope: "branch",
     permissions: [
       "kds.operate",
+<<<<<<< HEAD
       "menu.item.read", "menu.availability.read", "menu.availability.toggle",
+=======
+      "menu.view", "menu.availability.toggle",
+>>>>>>> demo/kds-nav-recovery
       "recipe.view",
       "inventory.waste.record",
     ],
