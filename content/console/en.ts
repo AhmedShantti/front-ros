@@ -56,6 +56,7 @@ export const consoleEn = {
   "nav.terminals": "Terminals",
   "nav.stations": "Stations",
   "nav.drawers": "Drawers",
+  "nav.openCashSessions": "Open cash sessions",
   "nav.menu": "Menu & Recipes",
   "nav.categories": "Categories",
   "nav.items": "Items",
@@ -1238,6 +1239,15 @@ export const consoleEn = {
   "term.offlineNote": "This build has no server. Orders, tickets, stock and the cash drawer live in this browser and sync between tabs, so the POS and the kitchen display talk to each other.",
   "term.loading": "Starting terminal",
 
+  // -- Open cash sessions (manager discovery / close-at-terminal handoff) --
+  "cashSessions.title": "Open cash sessions",
+  "cashSessions.subtitle": "Every drawer still open or awaiting a manager decision at this branch, including ones opened by someone else.",
+  "cashSessions.employee": "Employee",
+  "cashSessions.closeAtTerminal": "Close at terminal",
+  "cashSessions.handoffNote": "This screen only finds the session. The count, the variance and any manager decision still happen at the terminal, on a fresh PIN sign-on.",
+  "cashSessions.selectBranch": "Pick a branch to see its open sessions.",
+  "cashSessions.empty": "No open or in-progress cash sessions at this branch.",
+
   // -- Shift and drawer ----------------------------------------------------
   "shift.title": "Shift",
   "shift.none": "No shift is open",
@@ -2091,6 +2101,11 @@ export const consoleEn = {
   "shift.foreignForget": "Forget it on this till",
   "shift.foreignForgetNote": "Only if it was already closed somewhere else. This does not count or close the drawer — it stops this till pointing at it, and nothing here can point at it again.",
   "shift.foreignForgotten": "Forgotten on this till.",
+  "shift.targetSession": "Session to close",
+  "shift.targetSessionNote": "Handed off from Open Cash Sessions. Nothing here is decided until a manager signs on below — the server re-checks the session and the permission fresh.",
+  "shift.switchEmployee": "Switch employee",
+  "shift.closeOtherTitle": "Sign on to close this session",
+  "shift.closeOtherNote": "Enter the deciding manager's own employee code and PIN — not the cashier who opened the drawer.",
   "shift.openingFloatHint": "The cash counted into the drawer at the start of the shift.",
   "pos.orderSettled": "Order settled and completed.",
   "shift.liveTitle": "This drawer",
@@ -2113,6 +2128,7 @@ export const consoleEn = {
   "shift.declare": "Commit the count",
   "shift.declared": "Count committed.",
   "shift.closedWithin": "Within tolerance. The drawer is closed.",
+  "shift.closedSummary": "counted {counted}, variance {variance}",
   "shift.frozenTitle": "Over tolerance — frozen for a manager",
   "shift.frozenNote": "A manager decision is the only way out of this state. The session stays frozen until one is recorded, and a rejection leaves it frozen for another attempt.",
   "shift.managerCode": "Manager employee code",

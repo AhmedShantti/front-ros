@@ -58,6 +58,7 @@ export const consoleAr: ConsoleCopy = {
   "nav.terminals": "الأجهزة",
   "nav.stations": "محطات التحضير",
   "nav.drawers": "الأدراج",
+  "nav.openCashSessions": "جلسات النقد المفتوحة",
   "nav.menu": "القائمة والوصفات",
   "nav.categories": "الفئات",
   "nav.items": "الأصناف",
@@ -1235,6 +1236,15 @@ export const consoleAr: ConsoleCopy = {
   "term.offlineNote": "لا يوجد خادم في هذه النسخة. الطلبات والتذاكر والمخزون ودرج النقدية تعيش في هذا المتصفح وتتزامن بين التبويبات، فتتحدث نقطة البيع وشاشة المطبخ معًا.",
   "term.loading": "جارٍ تشغيل الجهاز",
 
+  // -- Open cash sessions (manager discovery / close-at-terminal handoff) --
+  "cashSessions.title": "جلسات النقد المفتوحة",
+  "cashSessions.subtitle": "كل درج ما زال مفتوحًا أو بانتظار قرار مدير في هذا الفرع، بما في ذلك ما فتحه غيرك.",
+  "cashSessions.employee": "الموظف",
+  "cashSessions.closeAtTerminal": "الإغلاق من الجهاز",
+  "cashSessions.handoffNote": "هذه الشاشة تكتفي بإيجاد الجلسة فقط. العدّ والفرق وأي قرار من المدير يتم كله عند الجهاز، بتسجيل دخول جديد برمز PIN.",
+  "cashSessions.selectBranch": "اختر فرعًا لعرض جلساته المفتوحة.",
+  "cashSessions.empty": "لا توجد جلسات نقد مفتوحة أو قيد الإغلاق في هذا الفرع.",
+
   // -- Shift and drawer ----------------------------------------------------
   "shift.title": "الوردية",
   "shift.none": "لا توجد وردية مفتوحة",
@@ -2088,6 +2098,11 @@ export const consoleAr: ConsoleCopy = {
   "shift.foreignForget": "تجاهله على هذه الطرفية",
   "shift.foreignForgetNote": "فقط إذا كان قد أُغلق في مكان آخر. هذا لا يجرد الدرج ولا يغلقه — بل يوقف إشارة هذه الطرفية إليه، ولا شيء هنا يستطيع الإشارة إليه مرة أخرى.",
   "shift.foreignForgotten": "تم تجاهله على هذه الطرفية.",
+  "shift.targetSession": "الجلسة المطلوب إغلاقها",
+  "shift.targetSessionNote": "مُحالة من شاشة جلسات النقد المفتوحة. لا يُقرَّر شيء هنا قبل أن يسجّل مدير دخوله أدناه — الخادم يعيد التحقق من الجلسة والصلاحية من جديد.",
+  "shift.switchEmployee": "تبديل الموظف",
+  "shift.closeOtherTitle": "سجّل الدخول لإغلاق هذه الجلسة",
+  "shift.closeOtherNote": "أدخل رمز الموظف ورقم PIN الخاصّين بالمدير الذي سيتخذ القرار — وليس الكاشير الذي فتح الدرج.",
   "shift.openingFloatHint": "النقد المعدود في الدرج عند بداية الوردية.",
   "pos.orderSettled": "سُدِّد الطلب وأُتمّ.",
   "shift.liveTitle": "هذا الدرج",
@@ -2110,6 +2125,7 @@ export const consoleAr: ConsoleCopy = {
   "shift.declare": "تثبيت العدّ",
   "shift.declared": "ثُبِّت العدّ.",
   "shift.closedWithin": "ضمن حدّ التسامح. أُغلق الدرج.",
+  "shift.closedSummary": "المعدود {counted}، الفرق {variance}",
   "shift.frozenTitle": "تجاوز حدّ التسامح — مجمَّد بانتظار مدير",
   "shift.frozenNote": "قرار المدير هو المخرج الوحيد من هذه الحالة. تبقى الجلسة مجمَّدة حتى يُسجَّل قرار، والرفض يبقيها مجمَّدة لمحاولة أخرى.",
   "shift.managerCode": "رمز موظف المدير",

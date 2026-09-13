@@ -52,6 +52,7 @@ import type { Scope } from "./services";
 import { DATA_MODE } from "@/lib/api/config";
 import { signOut as apiSignOut } from "@/lib/api/auth";
 import {
+  clearTerminalIdentity,
   getDeviceTenantId,
   getTerminalBranchId,
   isSignedIn,
@@ -678,7 +679,9 @@ export function ConsoleProvider({
   setActiveSurface(surface);
   return (
     <PreferencesProvider>
-      <SessionProvider surface={surface}>{children}</SessionProvider>
+      <SessionProvider surface={surface}>
+        <ConfirmProvider>{children}</ConfirmProvider>
+      </SessionProvider>
     </PreferencesProvider>
   );
 }

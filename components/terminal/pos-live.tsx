@@ -74,12 +74,17 @@ import {
   setPendingCashOpen,
   getPosEmployee,
   getDeviceTenantId,
-  isSignedIn,
-  onSessionChange,
+  type OpenCashSession,
   type PosEmployee,
 } from "@/lib/api/session";
-import { signInWithPin } from "@/lib/api/auth";
+import { signInWithPin, signOffTerminal } from "@/lib/api/auth";
 import { deviceId } from "@/lib/api/ids";
+import {
+  isAlreadyOpenConflict,
+  isMine,
+  reconcileWithServer,
+  sameEmployee,
+} from "@/lib/console/cash-session-reconcile";
 import { AsyncPanel, ErrorPanel } from "@/components/console/states";
 import { DrawerSheet } from "@/components/terminal/pos-drawer";
 import {
@@ -106,21 +111,6 @@ const UNSUPPORTED_KEYS = [
   "pos.unsupportedCourse",
   "pos.unsupportedKds",
 ] as const;
-
-/**
- * Whether two employee codes name the same person.
- *
- * Compared loosely on purpose. The code is typed by hand on a touchscreen at
- * the start of every shift, and `EMP01`, `emp01` and a trailing space from a
- * fat-fingered keyboard are the same employee to everyone except a strict
- * equality check. Getting this wrong locks a cashier out of their OWN open
- * drawer and sends them to a screen saying it belongs to somebody else,
- * which is the worst possible failure of a custody check: it is both wrong
- * and unarguable. The server still decides who the token is.
- */
-function sameEmployee(a: string, b: string): boolean {
-  return a.trim().toLowerCase() === b.trim().toLowerCase();
-}
 
 export function LivePos() {
   const { t } = useI18n();
@@ -171,51 +161,29 @@ export function LivePos() {
     return onSessionChange(sync);
   }, []);
 
-<<<<<<< HEAD
-  const terminalId = mounted ? getTerminalId() : null;
-
   /**
-   * POS-CUSTODY — whether the drawer this till is holding is THIS cashier's.
-   *
-   * Option (a): one employee, one drawer, one shift. The session that is open
-   * belongs to whoever opened it, and everything that lands on it — sales,
-   * pay-ins, pay-outs, the closing count and the variance that gets attached
-   * to a name — lands on them. So it is adopted for that employee and shown
-   * to anybody else, never handed over silently.
-   *
-   * The terminal has to match too: a device re-bound to a different till has
-   * no business resuming a drawer that was opened at the old one.
-   */
-  const mine =
-    held !== null &&
-    cashier !== null &&
-    held.employeeCode !== "" &&
-    sameEmployee(held.employeeCode, cashier.code) &&
-    (held.terminalId === "" || held.terminalId === terminalId);
-
-  const cashSessionId = mine && held ? held.cashSessionId : null;
-=======
-  /**
-   * PROD-POS-SESSION-RECOVERY-P0 — `cashier`/`cashSessionId` were only ever
-   * read from storage once, above, on mount. A dead refresh token (an
-   * expired PIN session nobody renewed) makes `client.ts`'s
-   * `refreshSession()` call `clearSession()`, which correctly wipes the
-   * terminal token AND `posEmployee`/`cashSessionId` from storage together
-   * — but this already-mounted tree never re-read that, so it kept
-   * rendering the stale cashier name and the Open Drawer screen, both now
-   * backed by nothing, while every request 401'd underneath them. Mirrors
-   * `lib/console/providers.tsx`'s own `onSessionChange` listener for the
-   * console surface: react to storage disappearing, not just read it once.
+   * PROD-POS-SESSION-RECOVERY-P0 — `cashier` was only ever read from storage
+   * once, above, on mount. A dead refresh token (an expired PIN session
+   * nobody renewed) makes `client.ts`'s `refreshSession()` call
+   * `clearSession()`, which correctly wipes the terminal token AND
+   * `posEmployee` from storage together — but this already-mounted tree
+   * never re-read that, so it kept rendering the stale cashier name and the
+   * Open Drawer screen, both now backed by nothing, while every request
+   * 401'd underneath them. Mirrors `lib/console/providers.tsx`'s own
+   * `onSessionChange` listener for the console surface: react to storage
+   * disappearing, not just read it once. `held` is dropped too — an
+   * employee identity that just evaporated cannot still vouch for a drawer.
    */
   useEffect(() => {
     return onSessionChange(() => {
       if (!isSignedIn()) {
         setCashier(null);
-        setSessionId(null);
+        setHeld(null);
       }
     });
   }, []);
->>>>>>> wip/console-feature-work
+
+  const terminalId = mounted ? getTerminalId() : null;
 
   /** Write through, so the drawer survives the next reload too. */
   const takeCashSession = (next: string | null) => {
@@ -224,45 +192,84 @@ export function LivePos() {
       setHeld(null);
       return;
     }
+
     const record: OpenCashSession = {
       cashSessionId: next,
       employeeCode: cashier.code,
       terminalId,
     };
+
     setOpenCashSession(record);
     setHeld(record);
   };
 
-<<<<<<< HEAD
   /*
-   * The terminal this device is bound to, as the server describes it.
+   * POS-CUSTODY — whether the drawer this till is holding is THIS cashier's.
    *
-   * Two things on this screen need it. `drawerId` must be a UUID the server
-   * will accept, and a till has exactly one drawer, so the terminal's own id
-   * is it — a cashier typing "DRAWER-1" was never going to pass validation.
-   * And the cash-close policy is published per branch, which on a POS is
-   * whichever branch the terminal belongs to, not a console-side selection
-   * the cashier may never have made.
+   * A LOCAL-ONLY check, and deliberately so: it has to run before the server
+   * call below ever fires, because that call is scoped to whoever is signed
+   * on NOW and can only ever answer for them — it has no way to say "yes,
+   * but it's someone else's" the way `held`'s own employee code can. This is
+   * also why a foreign `held` record must never be reconciled away just
+   * because the SIGNED-ON cashier's own server session comes back empty.
+   */
+  const mine = isMine(held, cashier, terminalId);
+  const blockedByForeignDrawer = held !== null && !mine;
+
+  /*
+   * The signed-on cashier's own open session, as the server describes it.
+   *
+   * Server truth wins over whatever storage remembered, including clearing
+   * a stale cash-session id the server no longer knows about — but only
+   * ever for THIS cashier's own record. Never asked while a foreign drawer
+   * is held: that request would only ever answer for the new cashier, and
+   * has nothing useful to say about somebody else's drawer.
    */
   const currentSession = useAsync(
-    () => (mounted && cashier ? services.treasury.getCurrentSession() : Promise.resolve(null)),
-    [mounted, cashier?.code],
+    () =>
+      mounted && cashier && !blockedByForeignDrawer
+        ? services.treasury.getCurrentSession()
+        : Promise.resolve(null),
+    [mounted, cashier?.code, blockedByForeignDrawer],
   );
 
+  /*
+   * Deliberately NOT keyed on `held`/`blockedByForeignDrawer`, or on
+   * `cashier` itself: this runs once per fresh `currentSession` answer,
+   * reconciling whatever `held` was at THAT moment.
+   *
+   * Two things would each replay a STALE server snapshot against state a
+   * later action already moved on from, and both bit in exactly the same
+   * way — wiping a drawer this same render cycle had just opened:
+   *
+   *  - Keying on `held` itself: reruns on every `takeCashSession`, including
+   *    the one this effect just performed.
+   *  - Keying on the `cashier` OBJECT: `getPosEmployee()` (in `sync()` above)
+   *    `JSON.parse`s a NEW object on every call, so a completely unrelated
+   *    `announce()` — such as the one `takeCashSession`'s own
+   *    `setOpenCashSession` fires — hands this a referentially-new-but-
+   *    identical `cashier` and reruns it anyway. `cashier?.code` is the
+   *    stable primitive `useAsync`'s own deps already key on below.
+   *
+   * `takeCashSession`/`onSessionChange` are what react to everything that
+   * happens AFTER this fetch; this effect only ever settles the fetch itself.
+   */
   useEffect(() => {
-    if (!mounted || !cashier || currentSession.loading || currentSession.error) return;
-    // Server truth wins outright — replace whatever storage remembered,
-    // including clearing a stale id the server no longer knows about.
-    setCashSessionId(currentSession.data ? currentSession.data.cashSessionId : null);
+    if (!mounted || !cashier || blockedByForeignDrawer) return;
+    if (currentSession.loading || currentSession.error) return;
+
+    const action = reconcileWithServer({
+      held,
+      serverCashSessionId: currentSession.data ? currentSession.data.cashSessionId : null,
+    });
+
+    if (action.type === "restore") takeCashSession(action.cashSessionId);
+    else if (action.type === "clear") takeCashSession(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mounted, cashier, currentSession.loading, currentSession.error, currentSession.data]);
+  }, [mounted, cashier?.code, currentSession.loading, currentSession.error, currentSession.data]);
 
-  const terminalId = mounted ? getTerminalId() : null;
+  const cashSessionId = mine && held ? held.cashSessionId : null;
 
-=======
-  const terminalId = mounted ? getTerminalId() : null;
-
->>>>>>> wip/console-feature-work
   if (!mounted) {
     return (
       <div className="text-fg-muted flex flex-1 items-center justify-center gap-2 p-8 text-sm">
@@ -326,7 +333,7 @@ export function LivePos() {
    * with no `GET /cash-sessions` to find it again. So the till says whose it
    * is and offers the two things a person can actually do about it.
    */
-  if (held && !mine) {
+  if (blockedByForeignDrawer && held) {
     return (
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="mx-auto w-full max-w-md p-4">
@@ -438,6 +445,7 @@ export function LivePos() {
       <DrawerSheet
         open={drawer}
         cashSessionId={cashSessionId}
+        cashierName={cashier.name}
         onClose={() => setDrawer(false)}
         onMessage={setMessage}
         onClosed={() => {
@@ -695,7 +703,34 @@ function OpenDrawer({
     });
 
     await action.run(
-      () => services.treasury.openCashSession({ drawerId: drawer, openingFloat, ids }),
+      async () => {
+        try {
+          return await services.treasury.openCashSession({ drawerId: drawer, openingFloat, ids });
+        } catch (caught) {
+          /*
+           * BUG-2 — "you already have an open shift" is not a dead end.
+           *
+           * It means this cashier's own session is open on the backend even
+           * though this till's local storage lost track of it (a different
+           * device closed it and reopened one, storage was cleared, or a
+           * previous open genuinely landed under ids this attempt did not
+           * replay). Fetching the authoritative current session and
+           * resuming it — as a normal success, not a workaround — is the
+           * recovery: never leaving the cashier stuck behind a raw 409, and
+           * never opening a second drawer over the one that already exists.
+           */
+          if (caught instanceof ServiceError && isAlreadyOpenConflict(caught)) {
+            const current = await services.treasury.getCurrentSession();
+            if (current) {
+              return { cashSessionId: current.cashSessionId, shiftId: current.shiftId, created: false };
+            }
+            // No current session despite the conflict is a genuine race
+            // (closed between the 409 and this read) — fall through to the
+            // real error so a retry is what the cashier sees, not a hang.
+          }
+          throw caught;
+        }
+      },
       {
         onSuccess: (result) => {
           // Answered, so there is nothing left to resume.
